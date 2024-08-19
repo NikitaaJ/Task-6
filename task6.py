@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import psycopg2
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
+import argparse
 
 def login_to_screener(email, password):
     session = requests.Session()
