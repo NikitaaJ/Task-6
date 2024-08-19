@@ -66,18 +66,23 @@ def save_to_postgres(df, table_name, db, user, password, host, port):
         print(f"Error: {e}")
     finally:
         engine.dispose()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--email", required=True)
+    parser.add_argument("--password", required=True)
+    parser.add_argument("--table_name", default="financial_data")
+    parser.add_argument("--db", default="Task6")
+    parser.add_argument("--user", default="Nikita")
+    parser.add_argument("--pw", default="Nikita06")
+    parser.add_argument("--host", default="192.168.1.85")
+    parser.add_argument("--port", default="5432")
+    args = parser.parse_args()
+    session = login_to_screener(args.email, args.password)
+    if session:
+        df = scrape_reliance_data(session)
+        if df is not None:
+            save_to_postgres(df, args.table_name, args.db, args.user, args.pw, args.host, args.port)
 
-email = "nikita.jethani@godigitaltc.com"
-password = "test@1233"
-table_name = "financial_data"
-db = "Task6"
-user = "Nikita"
-pw = "Nikita06"
-host = "192.168.1.85"
-port = "5432"
 
-session = login_to_screener(email, password)
-if session:
-    df = scrape_reliance_data(session)
-    if df is not None:
-        save_to_postgres(df, table_name, db, user, pw, host, port)
+
+
