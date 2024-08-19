@@ -73,7 +73,7 @@ table_name = "financial_data"
 db = "Task6"
 user = "Nikita"
 pw = "Nikita06"
-host = "localhost"
+host = "192.168.1.85"
 port = "5432"
 
 session = login_to_screener(email, password)
