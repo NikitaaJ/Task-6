@@ -5,15 +5,6 @@ import psycopg2
 import argparse
 import numpy as np
 
-
-Base = declarative_base()
-
-class FinancialData(Base):
-    __tablename__ = 'financial_data'
-    id = Column(Integer, primary_key=True)
-    narration = Column(String)
-    value = Column(Float)
-
 def login_to_screener(email, password):
     session = requests.Session()
     login_url = "https://www.screener.in/login/?"
@@ -71,19 +62,22 @@ def scrape_reliance_data(session):
         return None
 
 def save_to_postgres(df, table_name, db, user, password, host, port):
-    engine = create_engine(f"postgresql://{user}:{password}@{host}/{db}", connect_args={'port': port})
+    conn = psycopg2.connect(
+        dbname=db,
+        user=user,
+        password=password,
+        host=host,
+        port=port
+    )
     try:
         # Specify data types for each column
-        df.to_sql(table_name, con=engine, if_exists='replace', index=False, dtype={
-            'Narration': String(),
-            # Add data types for other columns
-        })
+        df.to_sql(table_name, con=conn, if_exists='replace', index=False)
         print("Data saved to Postgres")
-    except SQLAlchemyError as e:
+    except Exception as e:
         print(f"Error: {e}")
         raise
     finally:
-        engine.dispose()
+        conn.close()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
