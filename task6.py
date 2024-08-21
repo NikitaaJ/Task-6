@@ -50,9 +50,9 @@ def scrape_reliance_data(session):
         df = pd.DataFrame(row_data, columns=headers)
         if not df.empty:
             df.columns = ['Narration'] + df.columns[1:].tolist()
-        df = df.reset_index(drop=True)
-        print(df.head())
-        return df
+        df_transposed = df_transposed.reset_index(drop=True)
+        print(df_transposed.head())
+        return df_transposed
     else:
         print("Failed to retrieve Reliance data")
         return None
