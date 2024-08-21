@@ -7,6 +7,5 @@ sqlalchemy
 argparse
 numpy 
 Column
-declarative_base
-sessionmaker
+
 
