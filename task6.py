@@ -2,8 +2,8 @@ import requests
 import pandas as pd
 from bs4 import BeautifulSoup
 import psycopg2
-import argparse
-import numpy as np
+from sqlalchemy import create_engine
+from sqlalchemy.exc import SQLAlchemyError
 
 def login_to_screener(email, password):
     session = requests.Session()
@@ -51,10 +51,6 @@ def scrape_reliance_data(session):
         if not df.empty:
             df.columns = ['Narration'] + df.columns[1:].tolist()
         df = df.reset_index(drop=True)
-        # Transpose the DataFrame
-        df = df.transpose()
-        # Handle missing values
-        df = df.apply(pd.to_numeric, errors='coerce')
         print(df.head())
         return df
     else:
@@ -62,54 +58,26 @@ def scrape_reliance_data(session):
         return None
 
 def save_to_postgres(df, table_name, db, user, password, host, port):
-    conn = psycopg2.connect(
-        dbname=db,
-        user=user,
-        password=password,
-        host=host,
-        port=port
-    )
-    cur = conn.cursor()
+    engine = create_engine(f"postgresql://{user}:{password}@{host}/{db}", connect_args={'port': port})
     try:
-        # Create table if it doesn't exist
-        create_table_query = f"CREATE TABLE IF NOT EXISTS {table_name} ("
-        for col in df.columns:
-            create_table_query += f"{col} VARCHAR(255), "
-        create_table_query = create_table_query[:-2] + ");"
-        cur.execute(create_table_query)
-        
-        # Insert data into table
-        for index, row in df.iterrows():
-            insert_query = f"INSERT INTO {table_name} VALUES ("
-            for val in row:
-                if isinstance(val, str):
-                    insert_query += f"'{val}', "
-                else:
-                    insert_query += f"{val}, "
-            insert_query = insert_query[:-2] + ");"
-            cur.execute(insert_query)
-        conn.commit()
+        df.to_sql(table_name, con=engine, if_exists='replace', index=False)
         print("Data saved to Postgres")
-    except Exception as e:
+    except SQLAlchemyError as e:
         print(f"Error: {e}")
-        raise
     finally:
-        cur.close()
-        conn.close()
+        engine.dispose()
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--email", required=True)
-    parser.add_argument("--password", required=True)
-    parser.add_argument("--table_name", default="financial_data")
-    parser.add_argument("--db", default="Task6")
-    parser.add_argument("--user", default="Nikita")
-    parser.add_argument("--pw", default="Nikita06")
-    parser.add_argument("--host", default="192.168.1.85")
-    parser.add_argument("--port", default="5432")
-    args = parser.parse_args()
-    session = login_to_screener(args.email, args.password)
-    if session:
-        df = scrape_reliance_data(session)
-        if df is not None:
-            save_to_postgres(df, args.table_name, args.db, args.user, args.pw, args.host, args.port)
+email = "nikita.jethani@godigitaltc.com"
+password = "test@1233"
+table_name = "financial_data"
+db = "Task6"
+user = "Nikita"
+pw = "Nikita06"
+host = "localhost"
+port = "5432"
+
+session = login_to_screener(email, password)
+if session:
+    df = scrape_reliance_data(session)
+    if df is not None:
+        save_to_postgres(df, table_name, db, user, pw, host, port)
