@@ -54,8 +54,14 @@ def scrape_reliance_data(session):
         df_transposed = df.transpose().reset_index()
         df_transposed.rename(columns={'index': 'Year'}, inplace=True)
         df_transposed = df_transposed.reset_index(drop=True)
-        print(df_transposed.head())
-        return df_transposed
+        
+    # Convert data to float
+    for col in df_transposed.columns:
+        if col != 'Year' and col != 'Narration':
+            df_transposed[col] = pd.to_numeric(df_transposed[col].str.replace('%', '').str.strip(), errors='coerce')
+    
+    print(df_transposed.head())
+    return df_transposed
         # csv_file_path = 'profit_loss_data/profit_loss_data.csv'
         # df_transposed.to_csv(csv_file_path, index=False)
         # print(f"Data saved to {csv_file_path}")
