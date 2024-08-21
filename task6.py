@@ -69,14 +69,32 @@ def save_to_postgres(df, table_name, db, user, password, host, port):
         host=host,
         port=port
     )
+    cur = conn.cursor()
     try:
-        # Specify data types for each column
-        df.to_sql(table_name, con=conn, if_exists='replace', index=False)
+        # Create table if it doesn't exist
+        create_table_query = f"CREATE TABLE IF NOT EXISTS {table_name} ("
+        for col in df.columns:
+            create_table_query += f"{col} VARCHAR(255), "
+        create_table_query = create_table_query[:-2] + ");"
+        cur.execute(create_table_query)
+        
+        # Insert data into table
+        for index, row in df.iterrows():
+            insert_query = f"INSERT INTO {table_name} VALUES ("
+            for val in row:
+                if isinstance(val, str):
+                    insert_query += f"'{val}', "
+                else:
+                    insert_query += f"{val}, "
+            insert_query = insert_query[:-2] + ");"
+            cur.execute(insert_query)
+        conn.commit()
         print("Data saved to Postgres")
     except Exception as e:
         print(f"Error: {e}")
         raise
     finally:
+        cur.close()
         conn.close()
 
 if __name__ == "__main__":
