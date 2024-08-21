@@ -10,5 +10,5 @@ argparse
 numpy as np
 Column, String, Integer, Float
 sqlalchemy.ext.declarative import declarative_base
-sqlalchemy.orm import sessionmaker
+sessionmaker
 
