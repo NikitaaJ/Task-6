@@ -4,3 +4,11 @@ beautifulsoup4
 psycopg2-binary
 pg8000 
 sqlalchemy
+create_engine
+SQLAlchemyError
+argparse
+numpy as np
+Column, String, Integer, Float
+sqlalchemy.ext.declarative import declarative_base
+sqlalchemy.orm import sessionmaker
+
