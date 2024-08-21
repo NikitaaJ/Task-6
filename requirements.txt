@@ -7,7 +7,7 @@ sqlalchemy
 create_engine
 SQLAlchemyError
 argparse
-numpy as np
+numpy 
 Column
 String
 Integer
