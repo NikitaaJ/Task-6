@@ -4,7 +4,8 @@ from bs4 import BeautifulSoup
 import psycopg2
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
-
+import argparse
+ 
 def login_to_screener(email, password):
     session = requests.Session()
     login_url = "https://www.screener.in/login/?"
@@ -27,7 +28,7 @@ def login_to_screener(email, password):
     else:
         print("Login failed")
         return None
-
+ 
 def scrape_reliance_data(session):
     search_url = "https://www.screener.in/company/RELIANCE/consolidated/"
     search_response = session.get(search_url)
@@ -50,13 +51,18 @@ def scrape_reliance_data(session):
         df = pd.DataFrame(row_data, columns=headers)
         if not df.empty:
             df.columns = ['Narration'] + df.columns[1:].tolist()
+        df_transposed = df.transpose().reset_index()
+        df_transposed.rename(columns={'index': 'Year'}, inplace=True)
         df_transposed = df_transposed.reset_index(drop=True)
         print(df_transposed.head())
         return df_transposed
+        # csv_file_path = 'profit_loss_data/profit_loss_data.csv'
+        # df_transposed.to_csv(csv_file_path, index=False)
+        # print(f"Data saved to {csv_file_path}")
     else:
         print("Failed to retrieve Reliance data")
         return None
-
+   
 def save_to_postgres(df, table_name, db, user, password, host, port):
     engine = create_engine(f"postgresql://{user}:{password}@{host}/{db}", connect_args={'port': port})
     try:
@@ -66,18 +72,19 @@ def save_to_postgres(df, table_name, db, user, password, host, port):
         print(f"Error: {e}")
     finally:
         engine.dispose()
-
-email = "nikita.jethani@godigitaltc.com"
-password = "test@1233"
-table_name = "financial_data"
-db = "Task6"
-user = "Nikita"
-pw = "Nikita06"
-host = "localhost"
-port = "5432"
-
-session = login_to_screener(email, password)
-if session:
-    df = scrape_reliance_data(session)
-    if df is not None:
-        save_to_postgres(df, table_name, db, user, pw, host, port)
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--email", default="darshan.patil@godigitaltc.com")
+    parser.add_argument("--password", default="Darshan123")
+    parser.add_argument("--table_name", default="financial_data")
+    parser.add_argument("--db", default="Task6")
+    parser.add_argument("--user", default="Darshan")
+    parser.add_argument("--pw", default="Darshan123")
+    parser.add_argument("--host", default="192.168.3.43")
+    parser.add_argument("--port", default="5432")
+    args = parser.parse_args()
+    session = login_to_screener(args.email, args.password)
+    if session:
+        df = scrape_reliance_data(session)
+        if df is not None:
+            save_to_postgres(df, args.table_name, args.db, args.user, args.pw, args.host, args.port)
