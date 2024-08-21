@@ -2,7 +2,6 @@ import requests
 import pandas as pd
 from bs4 import BeautifulSoup
 import psycopg2
-from sqlalchemy.exc import SQLAlchemyError
 import argparse
 import numpy as np
 from sqlalchemy import Column, String, Integer, Float
