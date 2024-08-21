@@ -50,10 +50,12 @@ def scrape_reliance_data(session):
                 print(f"Row data length mismatch: {cols}")
         df = pd.DataFrame(row_data, columns=headers)
         if not df.empty:
-            df.columns = ['Narration'] + df.columns[1:].tolist()
+            df.columns = ['Year'] + df.columns[1:].tolist()
+            df = df.rename(columns={'Narration': 'Year', 'Year': 'Narration'})
         df_transposed = df.transpose().reset_index()
-        df_transposed.rename(columns={'index': 'Year'}, inplace=True)
+        df_transposed.rename(columns={'index': 'Narration'}, inplace=True)
         df_transposed = df_transposed.reset_index(drop=True)
+        df_transposed = df_transposed.fillna(0)  # Replace null values with 0
         print(df_transposed.head())
         return df_transposed
         # csv_file_path = 'profit_loss_data/profit_loss_data.csv'
@@ -63,9 +65,27 @@ def scrape_reliance_data(session):
         print("Failed to retrieve Reliance data")
         return None
    
+def clean_data(value):
+    if isinstance(value, str):
+        value = value.replace("+", "").replace("%", "").replace(",", "").strip()
+        if value.replace('.', '', 1).isdigit():
+            try:
+                return float(value)
+            except ValueError:
+                return None
+        return value
+    return value
+ 
 def save_to_postgres(df, table_name, db, user, password, host, port):
-    engine = create_engine(f"postgresql://{user}:{password}@{host}/{db}", connect_args={'port': port})
+    engine = create_engine(f"postgresql://{user}:{password}@{host}:{port}/{db}")
     try:
+        # Clean and convert data in all columns except the first one
+        for col in df.columns[1:]:
+            df[col] = df[col].apply(clean_data)
+       
+        # Handle missing or inappropriate values
+        df = df.fillna(0)
+       
         df.to_sql(table_name, con=engine, if_exists='replace', index=False)
         print("Data saved to Postgres")
     except SQLAlchemyError as e:
@@ -76,7 +96,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--email", default="darshan.patil@godigitaltc.com")
     parser.add_argument("--password", default="Darshan123")
-    parser.add_argument("--table_name", default="company_data")
+    parser.add_argument("--table_name", default="financial_data")
     parser.add_argument("--db", default="Task6")
     parser.add_argument("--user", default="Nikita")
     parser.add_argument("--pw", default="Nikita06")
