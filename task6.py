@@ -4,7 +4,6 @@ from bs4 import BeautifulSoup
 import psycopg2
 import argparse
 import numpy as np
-from sqlalchemy import Column, String, Integer, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
