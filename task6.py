@@ -76,7 +76,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--email", default="darshan.patil@godigitaltc.com")
     parser.add_argument("--password", default="Darshan123")
-    parser.add_argument("--table_name", default="financial_data")
+    parser.add_argument("--table_name", default="company_data")
     parser.add_argument("--db", default="Task6")
     parser.add_argument("--user", default="Darshan")
     parser.add_argument("--pw", default="Darshan123")
