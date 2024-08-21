@@ -5,6 +5,18 @@ import psycopg2
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 import argparse
+import numpy as np
+from sqlalchemy import Column, String, Integer, Float
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+
+Base = declarative_base()
+
+class FinancialData(Base):
+    __tablename__ = 'financial_data'
+    id = Column(Integer, primary_key=True)
+    narration = Column(String)
+    value = Column(Float)
 
 def login_to_screener(email, password):
     session = requests.Session()
@@ -52,6 +64,10 @@ def scrape_reliance_data(session):
         if not df.empty:
             df.columns = ['Narration'] + df.columns[1:].tolist()
         df = df.reset_index(drop=True)
+        # Transpose the DataFrame
+        df = df.transpose()
+        # Handle missing values
+        df = df.apply(pd.to_numeric, errors='coerce')
         print(df.head())
         return df
     else:
@@ -61,12 +77,18 @@ def scrape_reliance_data(session):
 def save_to_postgres(df, table_name, db, user, password, host, port):
     engine = create_engine(f"postgresql://{user}:{password}@{host}/{db}", connect_args={'port': port})
     try:
-        df.to_sql(table_name, con=engine, if_exists='replace', index=False)
+        # Specify data types for each column
+        df.to_sql(table_name, con=engine, if_exists='replace', index=False, dtype={
+            'Narration': String(),
+            # Add data types for other columns
+        })
         print("Data saved to Postgres")
     except SQLAlchemyError as e:
         print(f"Error: {e}")
+        raise
     finally:
         engine.dispose()
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--email", required=True)
@@ -83,7 +105,3 @@ if __name__ == "__main__":
         df = scrape_reliance_data(session)
         if df is not None:
             save_to_postgres(df, args.table_name, args.db, args.user, args.pw, args.host, args.port)
-
-
-
-
