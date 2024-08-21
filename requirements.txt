@@ -8,7 +8,10 @@ create_engine
 SQLAlchemyError
 argparse
 numpy as np
-Column, String, Integer, Float
-sqlalchemy.ext.declarative import declarative_base
+Column
+String
+Integer
+Float
+declarative_base
 sessionmaker
 
