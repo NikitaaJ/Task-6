@@ -7,9 +7,6 @@ sqlalchemy
 argparse
 numpy 
 Column
-String
-Integer
-Float
 declarative_base
 sessionmaker
 
