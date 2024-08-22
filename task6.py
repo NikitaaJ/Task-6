@@ -5,7 +5,7 @@ import psycopg2
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 import argparse
- 
+
 def login_to_screener(email, password):
     session = requests.Session()
     login_url = "https://www.screener.in/login/?"
@@ -28,7 +28,7 @@ def login_to_screener(email, password):
     else:
         print("Login failed")
         return None
- 
+
 def scrape_reliance_data(session):
     search_url = "https://www.screener.in/company/RELIANCE/consolidated/"
     search_response = session.get(search_url)
@@ -58,13 +58,10 @@ def scrape_reliance_data(session):
         df_transposed = df_transposed.fillna(0)  # Replace null values with 0
         print(df_transposed.head())
         return df_transposed
-        # csv_file_path = 'profit_loss_data/profit_loss_data.csv'
-        # df_transposed.to_csv(csv_file_path, index=False)
-        # print(f"Data saved to {csv_file_path}")
     else:
         print("Failed to retrieve Reliance data")
         return None
-   
+
 def clean_data(value):
     if isinstance(value, str):
         value = value.replace("+", "").replace("%", "").replace(",", "").strip()
@@ -73,9 +70,9 @@ def clean_data(value):
                 return float(value)
             except ValueError:
                 return None
-        return value
+        return None  # Return None for non-numeric values
     return value
- 
+
 def save_to_postgres(df, table_name, db, user, password, host, port):
     engine = create_engine(f"postgresql://{user}:{password}@{host}:{port}/{db}")
     try:
@@ -86,12 +83,17 @@ def save_to_postgres(df, table_name, db, user, password, host, port):
         # Handle missing or inappropriate values
         df = df.fillna(0)
        
-        df.to_sql(table_name, con=engine, if_exists='replace', index=False)
+        # Ensure all columns except the first one are float
+        for col in df.columns[1:]:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+       
+        df.to_sql(table_name, con=engine, if_exists='replace', index=False, dtype={col: float for col in df.columns[1:]})
         print("Data saved to Postgres")
     except SQLAlchemyError as e:
         print(f"Error: {e}")
     finally:
         engine.dispose()
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--email", default="darshan.patil@godigitaltc.com")
