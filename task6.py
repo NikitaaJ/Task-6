@@ -61,6 +61,9 @@ def scrape_reliance_data(session):
         df_transposed.columns = [col if col else 'Unknown' for col in df_transposed.columns]  
         df_transposed = df_transposed.replace('', 0)  
         df_transposed = df_transposed.replace(np.nan, 0)  
+        for col in df_transposed.columns[1:]:
+            df_transposed[col] = df_transposed[col].apply(clean_data)
+        df_transposed = df_transposed[df_transposed['Year'] != 'TTM']  # Drop the TTM row
         print(df_transposed.head())
         return df_transposed
     else:
@@ -81,8 +84,6 @@ def clean_data(value):
 def save_to_postgres(df, table_name, db, user, password, host, port):
     engine = create_engine(f"postgresql://{user}:{password}@{host}:{port}/{db}")
     try:
-        for col in df.columns[1:]:
-            df[col] = df[col].apply(clean_data)
         df = df.fillna(0)
         df.to_sql(table_name, con=engine, if_exists='replace', index=False)
         print("Data saved to Postgres")
