@@ -78,9 +78,8 @@ def clean_data(value):
                 return float(value)
             except ValueError:
                 return 0.0  
-        return value
+        return value.replace(',', '')  # Add this line to remove commas
     return value
-
 def save_to_postgres(df, table_name, db, user, password, host, port):
     engine = create_engine(f"postgresql://{user}:{password}@{host}:{port}/{db}")
     try:
