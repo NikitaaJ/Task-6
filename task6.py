@@ -63,7 +63,8 @@ def scrape_reliance_data(session):
         df_transposed = df_transposed.replace(np.nan, 0)  
         for col in df_transposed.columns[1:]:
             df_transposed[col] = df_transposed[col].apply(clean_data)
-        df_transposed = df_transposed[df_transposed['Year'] != 'TTM']  # Drop the TTM row
+        print(df_transposed.columns)  # Print the column names
+        df_transposed = df_transposed[df_transposed['year'] != 'TTM']  # Drop the TTM row
         print(df_transposed.head())
         return df_transposed
     else:
@@ -78,8 +79,9 @@ def clean_data(value):
                 return float(value)
             except ValueError:
                 return 0.0  
-        return value.replace(',', '')  # Add this line to remove commas
+        return value.replace(',', '')  
     return value
+
 def save_to_postgres(df, table_name, db, user, password, host, port):
     engine = create_engine(f"postgresql://{user}:{password}@{host}:{port}/{db}")
     try:
