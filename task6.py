@@ -2,9 +2,10 @@ import requests
 import pandas as pd
 from bs4 import BeautifulSoup
 import psycopg2
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, Float, String
 from sqlalchemy.exc import SQLAlchemyError
 import argparse
+import numpy as np
 
 def login_to_screener(email, password):
     session = requests.Session()
@@ -69,8 +70,12 @@ def clean_data(value):
             try:
                 return float(value)
             except ValueError:
-                return None
-        return None  # Return None for non-numeric values
+                return np.nan  # Return NaN for non-numeric values
+        else:
+            try:
+                return float(value)  # Try to convert to float
+            except ValueError:
+                return np.nan  # Return NaN if conversion fails
     return value
 
 def save_to_postgres(df, table_name, db, user, password, host, port):
@@ -87,7 +92,11 @@ def save_to_postgres(df, table_name, db, user, password, host, port):
         for col in df.columns[1:]:
             df[col] = pd.to_numeric(df[col], errors='coerce')
        
-        df.to_sql(table_name, con=engine, if_exists='replace', index=False, dtype={col: float for col in df.columns[1:]})
+        # Specify data types for each column
+        data_types = {col: Float() for col in df.columns[1:]}
+        data_types[df.columns[0]] = String()  # Assuming the first column is a string
+        
+        df.to_sql(table_name, con=engine, if_exists='replace', index=False, dtype=data_types)
         print("Data saved to Postgres")
     except SQLAlchemyError as e:
         print(f"Error: {e}")
@@ -96,8 +105,8 @@ def save_to_postgres(df, table_name, db, user, password, host, port):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--email", default="darshan.patil@godigitaltc.com")
-    parser.add_argument("--password", default="Darshan123")
+    parser.add_argument("--email", default=true)
+    parser.add_argument("--password", default=true)
     parser.add_argument("--table_name", default="financial_data")
     parser.add_argument("--db", default="Task6")
     parser.add_argument("--user", default="Nikita")
