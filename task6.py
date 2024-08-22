@@ -56,7 +56,8 @@ def scrape_reliance_data(session):
         df_transposed = df.transpose().reset_index()
         df_transposed.rename(columns={'index': 'Narration'}, inplace=True)
         df_transposed = df_transposed.reset_index(drop=True)
-        df_transposed = df_transposed.fillna(0)  # Replace null values with 0
+        df_transposed = df_transposed.replace('', 0)  # Replace empty strings with 0
+        df_transposed = df_transposed.replace(np.nan, 0)  # Replace null values with 0
         print(df_transposed.head())
         return df_transposed
     else:
