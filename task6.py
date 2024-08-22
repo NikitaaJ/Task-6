@@ -2,7 +2,7 @@ import requests
 import pandas as pd
 from bs4 import BeautifulSoup
 import psycopg2
-from sqlalchemy import create_engine, Float, String
+from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 import argparse
 import numpy as np
@@ -65,17 +65,13 @@ def scrape_reliance_data(session):
 
 def clean_data(value):
     if isinstance(value, str):
-        value = value.replace("+", "").replace("%", "").replace(",", "").strip()
+        value = value.replace("+", "").replace("%", "").replace(",", "").replace(" ", "").strip()
         if value.replace('.', '', 1).isdigit():
             try:
                 return float(value)
             except ValueError:
-                return np.nan  # Return NaN for non-numeric values
-        else:
-            try:
-                return float(value)  # Try to convert to float
-            except ValueError:
-                return np.nan  # Return NaN if conversion fails
+                return 0.0  # Return 0.0 for non-numeric values
+        return value
     return value
 
 def save_to_postgres(df, table_name, db, user, password, host, port):
@@ -88,15 +84,7 @@ def save_to_postgres(df, table_name, db, user, password, host, port):
         # Handle missing or inappropriate values
         df = df.fillna(0)
        
-        # Ensure all columns except the first one are float
-        for col in df.columns[1:]:
-            df[col] = pd.to_numeric(df[col], errors='coerce')
-       
-        # Specify data types for each column
-        data_types = {col: Float() for col in df.columns[1:]}
-        data_types[df.columns[0]] = String()  # Assuming the first column is a string
-        
-        df.to_sql(table_name, con=engine, if_exists='replace', index=False, dtype=data_types)
+        df.to_sql(table_name, con=engine, if_exists='replace', index=False)
         print("Data saved to Postgres")
     except SQLAlchemyError as e:
         print(f"Error: {e}")
@@ -107,7 +95,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--email", default=true)
     parser.add_argument("--password", default=true)
-    parser.add_argument("--table_name", default="financial_data")
+    parser.add_argument("--table_name", default="company_data")
     parser.add_argument("--db", default="Task6")
     parser.add_argument("--user", default="Nikita")
     parser.add_argument("--pw", default="Nikita06")
