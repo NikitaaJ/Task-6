@@ -52,7 +52,7 @@ def scrape_reliance_data(session):
         df = pd.DataFrame(row_data, columns=headers)
         if not df.empty:
             df.columns = ['Year'] + df.columns[1:].tolist()
-            df = df.rename(columns={'Narration': 'Year', 'Year': 'Narration'})
+            df = df.rename(columns={'Narration': 'Year', 'Year': 'year'})
         df_transposed = df.transpose().reset_index()
         df_transposed.rename(columns={'index': 'Narration'}, inplace=True)
         df_transposed = df_transposed.reset_index(drop=True)
