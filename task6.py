@@ -8,27 +8,7 @@ import argparse
 import numpy as np
 
 def login_to_screener(email, password):
-    session = requests.Session()
-    login_url = "https://www.screener.in/login/?"
-    login_page = session.get(login_url)
-    soup = BeautifulSoup(login_page.content, 'html.parser')
-    csrf_token = soup.find('input', {'name': 'csrfmiddlewaretoken'})['value']
-    login_payload = {
-        'username': email,
-        'password': password,
-        'csrfmiddlewaretoken': csrf_token
-    }
-    headers = {
-        'Referer': login_url,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36'
-    }
-    response = session.post(login_url, data=login_payload, headers=headers)
-    if response.url == "https://www.screener.in/dash/":
-        print("Login successful")
-        return session
-    else:
-        print("Login failed")
-        return None
+    # ... (rest of the code remains the same)
 
 def scrape_reliance_data(session):
     search_url = "https://www.screener.in/company/RELIANCE/consolidated/"
@@ -49,7 +29,9 @@ def scrape_reliance_data(session):
             else:
                 print(f"Row data length mismatch: {cols}")
         df = pd.DataFrame(row_data, columns=headers)
-        df = df.drop('TTM', axis=1)  # Drop the TTM column
+        if not df.empty:
+            df.columns = ['Year'] + df.columns[1:].tolist()
+            df = df.rename(columns={'Narration': 'Year', 'Year': 'year'})
         df_transposed = df.transpose().reset_index()
         df_transposed.rename(columns={'index': 'Narration'}, inplace=True)
         df_transposed = df_transposed.reset_index(drop=True)
@@ -75,12 +57,14 @@ def clean_data(value):
                 return 0.0  # Return 0.0 for non-numeric values
         return value
     return value
-
+ 
 def save_to_postgres(df, table_name, db, user, password, host, port):
     engine = create_engine(f"postgresql://{user}:{password}@{host}:{port}/{db}")
     try:
-        for col in df.columns:
+        # Clean and convert data in all columns except the first one
+        for col in df.columns[1:]:
             df[col] = df[col].apply(clean_data)
+        # Handle missing or inappropriate values
         df = df.fillna(0)
         df.to_sql(table_name, con=engine, if_exists='replace', index=False)
         print("Data saved to Postgres")
