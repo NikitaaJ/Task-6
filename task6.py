@@ -93,8 +93,8 @@ def save_to_postgres(df, table_name, db, user, password, host, port):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--email", default=true)
-    parser.add_argument("--password", default=true)
+    parser.add_argument("--email", required=True)
+    parser.add_argument("--password", required=True)
     parser.add_argument("--table_name", default="company_data")
     parser.add_argument("--db", default="Task6")
     parser.add_argument("--user", default="Nikita")
