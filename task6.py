@@ -84,6 +84,8 @@ def clean_data(value):
 def save_to_postgres(df, table_name, db, user, password, host, port):
     engine = create_engine(f"postgresql://{user}:{password}@{host}:{port}/{db}")
     try:
+        for col in df.columns[1:]:
+            df[col] = df[col].apply(clean_data)
         df = df.fillna(0)
         df.to_sql(table_name, con=engine, if_exists='replace', index=False)
         print("Data saved to Postgres")
