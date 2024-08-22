@@ -51,7 +51,8 @@ def scrape_reliance_data(session):
         df = pd.DataFrame(row_data, columns=headers)
         df = df.drop('TTM', axis=1)  # Drop the TTM column
         df_transposed = df.transpose().reset_index()
-        df_transposed.rename(columns={'index': 'Narration'}, inplace=True)
+        df_transposed.columns = df_transposed.iloc[0]  # Set the first row as column names
+        df_transposed = df_transposed[1:]  # Drop the first row
         df_transposed = df_transposed.reset_index(drop=True)
         df_transposed = df_transposed.replace('', 0)  # Replace empty strings with 0
         df_transposed = df_transposed.replace(np.nan, 0)  # Replace null values with 0
