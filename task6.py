@@ -104,7 +104,7 @@ def read_company_names_from_csv(file_path):
     try:
         df = pd.read_csv(file_path)
         print("DataFrame loaded from CSV:")
-                print(df.head())
+        print(df.head())
         if 'Symbol' in df.columns and 'Company Name' in df.columns:
             company_symbols = df['Symbol'].unique()
             company_names = df['Company Name'].unique()
