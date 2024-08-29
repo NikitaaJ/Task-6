@@ -8,6 +8,7 @@ import argparse
 import numpy as np
 
 def login_to_screener(email, password):
+    print("Logging in to Screener...")
     session = requests.Session()
     login_url = "https://www.screener.in/login/?"
     login_page = session.get(login_url)
@@ -31,6 +32,7 @@ def login_to_screener(email, password):
         return None
 
 def scrape_reliance_data(session, symbol):
+    print(f"Scraping data for {symbol}...")
     search_url = f"https://www.screener.in/company/{symbol}/consolidated/"
     search_response = session.get(search_url)
     if search_response.status_code == 200:
@@ -49,6 +51,8 @@ def scrape_reliance_data(session, symbol):
             else:
                 print(f"Row data length mismatch: {cols}")
         df = pd.DataFrame(row_data, columns=headers)
+        print("Raw DataFrame:")
+        print(df.head())
         if not df.empty:
             df.columns = ['Year'] + df.columns[1:].tolist()
             df = df.rename(columns={'Narration': 'Year', 'Year': 'year'})
@@ -68,8 +72,10 @@ def scrape_reliance_data(session, symbol):
         df_transposed.columns = cleaned_columns
         for col in df_transposed.columns[1:]:
             df_transposed[col] = df_transposed[col].apply(clean_data)
-        print(df_transposed.columns)  # Print the column names
+        print("Cleaned DataFrame:")
+        print(df_transposed.head())
         df_transposed = df_transposed[df_transposed['year'] != 'TTM']  # Drop the TTM row
+        print("Final DataFrame:")
         print(df_transposed.head())
         return df_transposed
     else:
@@ -77,6 +83,7 @@ def scrape_reliance_data(session, symbol):
         return None
 
 def clean_data(value):
+    print(f"Cleaning data: {value}")
     if isinstance(value, str):
         value = value.replace("+", "").replace("%", "").replace(",", "").replace(" ", "").strip()
         if value.replace('.', '', 1).isdigit():
@@ -88,11 +95,14 @@ def clean_data(value):
     return value
 
 def save_to_postgres(df, table_name, db, user, password, host, port):
+    print("Saving data to Postgres...")
     engine = create_engine(f"postgresql://{user}:{password}@{host}:{port}/{db}")
     try:
         for col in df.columns[1:]:
-            df[col] = df[col].apply(clean_data)
+                    df[col] = df[col].apply(clean_data)
         df = df.fillna(0)
+        print("DataFrame before saving to Postgres:")
+        print(df.head())
         df.to_sql(table_name, con=engine, if_exists='replace', index=False)
         print("Data saved to Postgres")
     except SQLAlchemyError as e:
@@ -101,6 +111,7 @@ def save_to_postgres(df, table_name, db, user, password, host, port):
         engine.dispose()
 
 def read_company_names_from_csv(file_path):
+    print("Reading company names from CSV...")
     try:
         df = pd.read_csv(file_path)
         print("DataFrame loaded from CSV:")
@@ -142,4 +153,6 @@ if __name__ == "__main__":
                 if df is not None:
                     df['Company'] = name
                     all_df = pd.concat([all_df, df], ignore_index=True)
+            print("Final DataFrame:")
+            print(all_df.head())
             save_to_postgres(all_df, args.table_name, args.db, args.user, args.pw, args.host, args.port)
