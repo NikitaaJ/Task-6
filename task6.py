@@ -130,7 +130,7 @@ if __name__ == "__main__":
     parser.add_argument("--pw", default="Nikita06")
     parser.add_argument("--host", default="192.168.1.193")
     parser.add_argument("--port", default="5432")
-    parser.add_argument("--csv_file", default="C:\\Users\\Other User\\Downloads\\ind_nifty50list 2.csv")
+    parser.add_argument("--csv_file", default="ind_nifty50list 2.csv")
     args = parser.parse_args()
     session = login_to_screener(args.email, args.password)
     if session:
