@@ -30,11 +30,11 @@ def login_to_screener(email, password):
         print("Login failed")
         return None
 
-def scrape_reliance_data(session):
-    search_url = "https://www.screener.in/company/RELIANCE/consolidated/"
+def scrape_reliance_data(session, symbol):
+    search_url = f"https://www.screener.in/company/{symbol}/consolidated/"
     search_response = session.get(search_url)
     if search_response.status_code == 200:
-        print("Reliance data retrieved successfully")
+        print(f"{symbol} data retrieved successfully")
         soup = BeautifulSoup(search_response.content, 'html.parser')
         table1 = soup.find('section', {'id': 'profit-loss'})
         table = table1.find('table')
@@ -61,13 +61,11 @@ def scrape_reliance_data(session):
         df_transposed.columns = [col if col else 'Unknown' for col in df_transposed.columns]  
         df_transposed = df_transposed.replace('', 0)  
         df_transposed = df_transposed.replace(np.nan, 0)  
-        # Added data cleaning step
         cleaned_columns = []
         for col in df_transposed.columns:
             cleaned_col = col.replace(' ', '_').replace('+', '').strip()
             cleaned_columns.append(cleaned_col)
         df_transposed.columns = cleaned_columns
- 
         for col in df_transposed.columns[1:]:
             df_transposed[col] = df_transposed[col].apply(clean_data)
         print(df_transposed.columns)  # Print the column names
@@ -75,7 +73,7 @@ def scrape_reliance_data(session):
         print(df_transposed.head())
         return df_transposed
     else:
-        print("Failed to retrieve Reliance data")
+        print(f"Failed to retrieve {symbol} data")
         return None
 
 def clean_data(value):
@@ -102,19 +100,46 @@ def save_to_postgres(df, table_name, db, user, password, host, port):
     finally:
         engine.dispose()
 
+def read_company_names_from_csv(file_path):
+    try:
+        df = pd.read_csv("C:\Users\Other User\Downloads\ind_nifty50list 2.csv")
+        print("DataFrame loaded from CSV:")
+                print(df.head())
+        if 'Symbol' in df.columns and 'Company Name' in df.columns:
+            company_symbols = df['Symbol'].unique()
+            company_names = df['Company Name'].unique()
+            print("\nCompany symbols extracted:")
+            print(company_symbols)
+            print("\nCompany names extracted:")
+            print(company_names)
+            return company_symbols, company_names
+        else:
+            print("Required columns not found in the CSV file.")
+            return None, None
+    except Exception as e:
+        print(f"Error reading CSV file: {e}")
+        return None, None
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--email", required=True)
     parser.add_argument("--password", required=True)
-    parser.add_argument("--table_name", default="company_data")
+    parser.add_argument("--table_name", default="company_data2")
     parser.add_argument("--db", default="Task6")
     parser.add_argument("--user", default="Nikita")
     parser.add_argument("--pw", default="Nikita06")
     parser.add_argument("--host", default="192.168.1.193")
     parser.add_argument("--port", default="5432")
+    parser.add_argument("--csv_file", required=True)
     args = parser.parse_args()
     session = login_to_screener(args.email, args.password)
     if session:
-        df = scrape_reliance_data(session)
-        if df is not None:
-            save_to_postgres(df, args.table_name, args.db, args.user, args.pw, args.host, args.port)
+        company_symbols, company_names = read_company_names_from_csv(args.csv_file)
+        if company_symbols is not None and company_names is not None:
+            all_df = pd.DataFrame()
+            for symbol, name in zip(company_symbols, company_names):
+                df = scrape_reliance_data(session, symbol)
+                if df is not None:
+                    df['Company'] = name
+                    all_df = pd.concat([all_df, df], ignore_index=True)
+            save_to_postgres(all_df, args.table_name, args.db, args.user, args.pw, args.host, args.port)
